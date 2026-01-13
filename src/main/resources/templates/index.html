@@ -1,38 +1,329 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lab10 Notes - Login/Register</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <script th:src="@{/js/index.js}" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Notes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 24px; }
+        .nav { display: flex; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #545b62; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        textarea { min-height: 100px; resize: vertical; }
+        .note { padding: 15px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 10px; }
+        .note h3 { margin-bottom: 10px; color: #333; }
+        .note p { color: #666; line-height: 1.6; }
+        .error { color: #dc3545; padding: 10px; background: #f8d7da; border-radius: 4px; margin-bottom: 15px; }
+        .success { color: #155724; padding: 10px; background: #d4edda; border-radius: 4px; margin-bottom: 15px; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>Secure Notes</h1>
+        <div class="nav">
+            <!-- Guest Menu -->
+            <div id="guestMenu">
+                <button class="btn btn-primary" onclick="showLogin()">Login</button>
+                <button class="btn btn-secondary" onclick="showRegister()">Register</button>
+            </div>
+            <!-- User Menu -->
+            <div id="userMenu" class="hidden">
+                <span id="username" style="margin-right: 15px;"></span>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
 
-<div id="headerContainer" th:replace="~{fragments/header :: header}"></div>
+    <!-- Auth Forms -->
+    <div id="authSection">
+        <!-- Login Form -->
+        <div id="loginForm" class="card hidden">
+            <h2>Login</h2>
+            <div id="loginError"></div>
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
 
-<h1 style="text-align:center;">Lab10 Notes</h1>
+        <!-- Register Form -->
+        <div id="registerForm" class="card hidden">
+            <h2>Register</h2>
+            <div id="registerError"></div>
+            <form onsubmit="register(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="registerUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Register</button>
+            </form>
+        </div>
+    </div>
 
-<!-- Tabs -->
-<div style="text-align:center; margin-bottom:20px;" id="tabsContainer">
-    <span class="tab active" id="tab-login">Login</span>
-    <span class="tab" id="tab-register">Sign Up</span>
+    <!-- Notes Section -->
+    <div id="notesSection" class="hidden">
+        <!-- Create Note Form -->
+        <div class="card">
+            <h2>Create New Note</h2>
+            <div id="noteError"></div>
+            <div id="noteSuccess"></div>
+            <form onsubmit="createNote(event)">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="noteTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Content</label>
+                    <textarea id="noteContent" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Note</button>
+            </form>
+        </div>
+
+        <!-- Notes List -->
+        <div class="card">
+            <h2>My Notes</h2>
+            <div id="notesList"></div>
+        </div>
+    </div>
 </div>
 
-<!-- Login Form -->
-<div id="loginForm" class="form-container active">
-    <input type="text" id="loginUsername" placeholder="Username" required>
-    <input type="password" id="loginPassword" placeholder="Password" required>
-    <button id="loginBtn">Login</button>
-</div>
+<script>
+    const API_URL = '';
+    let token = localStorage.getItem('token');
 
-<!-- Register Form -->
-<div id="registerForm" class="form-container">
-    <input type="text" id="regUsername" placeholder="Username" required>
-    <input type="email" id="regEmail" placeholder="Email" required>
-    <input type="password" id="regPassword" placeholder="Password" required>
-    <button id="registerBtn">Register</button>
-</div>
+    // Initialize UI
+    function init() {
+        if (token) {
+            checkAuth();
+        } else {
+            showGuestMenu();
+        }
+    }
 
-<div th:replace="~{fragments/footer :: footer}"></div>
+    // Check if token is valid and load notes
+    async function checkAuth() {
+        try {
+            const response = await fetch(`${API_URL}/api/notes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                showUserMenu();
+                loadNotes();
+            } else {
+                localStorage.removeItem('token');
+                token = null;
+                showGuestMenu();
+            }
+        } catch (error) {
+            localStorage.removeItem('token');
+            token = null;
+            showGuestMenu();
+        }
+    }
+
+    // Show/hide sections
+    function showGuestMenu() {
+        document.getElementById('guestMenu').classList.remove('hidden');
+        document.getElementById('userMenu').classList.add('hidden');
+        document.getElementById('authSection').classList.remove('hidden');
+        document.getElementById('notesSection').classList.add('hidden');
+    }
+
+    function showUserMenu() {
+        document.getElementById('guestMenu').classList.add('hidden');
+        document.getElementById('userMenu').classList.remove('hidden');
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('notesSection').classList.remove('hidden');
+
+        // Display email in header
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        document.getElementById('username').textContent = payload.sub;
+    }
+
+    function showLogin() {
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('registerForm').classList.add('hidden');
+    }
+
+    function showRegister() {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('registerForm').classList.remove('hidden');
+    }
+
+    // Auth functions
+    async function login(event) {
+        event.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                token = data.token;
+                localStorage.setItem('token', token);
+                showUserMenu();
+                loadNotes();
+            } else {
+                document.getElementById('loginError').innerHTML =
+                    `<div class="error">${data.message || 'Login failed'}</div>`;
+            }
+        } catch (error) {
+            document.getElementById('loginError').innerHTML =
+                `<div class="error">Network error. Please try again.</div>`;
+        }
+    }
+
+    async function register(event) {
+        event.preventDefault();
+        const username = document.getElementById('registerUsername').value;
+        const password = document.getElementById('registerPassword').value;
+
+        try {
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                token = data.token;
+                localStorage.setItem('token', token);
+                showUserMenu();
+                loadNotes();
+            } else {
+                document.getElementById('registerError').innerHTML =
+                    `<div class="error">${data.message || 'Registration failed'}</div>`;
+            }
+        } catch (error) {
+            document.getElementById('registerError').innerHTML =
+                `<div class="error">Network error. Please try again.</div>`;
+        }
+    }
+
+    function logout() {
+        token = null;
+        localStorage.removeItem('token');
+        showGuestMenu();
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('registerForm').classList.add('hidden');
+    }
+
+    // Notes functions
+    async function loadNotes() {
+        try {
+            const response = await fetch(`${API_URL}/api/notes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const notes = await response.json();
+                displayNotes(notes);
+            } else {
+                document.getElementById('notesList').innerHTML =
+                    '<p style="color: #666;">Failed to load notes</p>';
+            }
+        } catch (error) {
+            document.getElementById('notesList').innerHTML =
+                '<p style="color: #666;">Error loading notes</p>';
+        }
+    }
+
+    function displayNotes(notes) {
+        const notesList = document.getElementById('notesList');
+
+        if (notes.length === 0) {
+            notesList.innerHTML = '<p style="color: #666;">No notes yet. Create your first note above!</p>';
+            return;
+        }
+
+        notesList.innerHTML = notes.map(note => `
+                <div class="note">
+                    <h3>${escapeHtml(note.title)}</h3>
+                    <p>${escapeHtml(note.content)}</p>
+                </div>
+            `).join('');
+    }
+
+    async function createNote(event) {
+        event.preventDefault();
+        const title = document.getElementById('noteTitle').value;
+        const content = document.getElementById('noteContent').value;
+
+        try {
+            const response = await fetch(`${API_URL}/api/notes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title, content })
+            });
+
+            if (response.ok) {
+                document.getElementById('noteTitle').value = '';
+                document.getElementById('noteContent').value = '';
+                document.getElementById('noteSuccess').innerHTML =
+                    '<div class="success">Note created successfully!</div>';
+                setTimeout(() => {
+                    document.getElementById('noteSuccess').innerHTML = '';
+                }, 3000);
+                loadNotes();
+            } else {
+                const data = await response.json();
+                document.getElementById('noteError').innerHTML =
+                    `<div class="error">${data.message || 'Failed to create note'}</div>`;
+            }
+        } catch (error) {
+            document.getElementById('noteError').innerHTML =
+                '<div class="error">Network error. Please try again.</div>';
+        }
+    }
+
+    // Utility
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Initialize on load
+    init();
+</script>
 </body>
 </html>
