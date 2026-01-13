@@ -1,6 +1,5 @@
 package com.example.notes.controller
 
-import com.example.notes.repository.UserRepository
 import com.example.notes.service.NoteService
 import com.example.notes.service.UserService
 import org.springframework.security.core.context.SecurityContextHolder

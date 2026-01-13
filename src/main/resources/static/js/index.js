@@ -7,7 +7,6 @@ const loginFormDiv = document.getElementById('loginForm');
 const registerFormDiv = document.getElementById('registerForm');
 const tabsContainer = document.getElementById('tabsContainer');
 
-// Функция переключения табов
 function switchTab(tab){
     if(tab === 'login'){
         loginTab.classList.add('active');
@@ -67,7 +66,6 @@ function logout(){
     showLoggedIn();
 }
 
-// Кнопка в header
 document.addEventListener('click', e=>{
     if(e.target && e.target.id==='headerLogout') logout();
 });

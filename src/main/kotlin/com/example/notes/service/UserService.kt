@@ -1,5 +1,6 @@
 package com.example.notes.service
 
+import com.example.notes.model.Role
 import com.example.notes.model.User
 import com.example.notes.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -15,12 +16,20 @@ open class UserService(
             User(
                 username = username,
                 email = email,
-                password = passwordEncoder.encode(password)
+                password = passwordEncoder.encode(password),
+                role = Role.USER
             )
         )
 
-    fun authenticate(username: String, raw: String): User = repo.findByUsername(username).takeIf {
+    fun authenticate(username: String, raw: String): User = repo.findByUsername(username)?.takeIf {
         passwordEncoder.matches(raw, it.password)
+    }?.also {
+        User(
+            id = it.id,
+            username = it.username,
+            email = it.email,
+            role = it.role,
+        )
     } ?: throw RuntimeException("Bad credentials")
 
     fun findByUsername(username: String): User? = repo.findByUsername(username)
