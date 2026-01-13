@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lab10 Notes - Login/Register</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/index.js}" defer></script>
+</head>
+<body>
+
+<!-- Меню скрыто для не залогиненных -->
+<div id="headerContainer" th:replace="~{fragments/header :: header}"></div>
+
+<h1 style="text-align:center;">Lab10 Notes</h1>
+
+<!-- Tabs -->
+<div style="text-align:center; margin-bottom:20px;" id="tabsContainer">
+    <span class="tab active" id="tab-login">Login</span>
+    <span class="tab" id="tab-register">Sign Up</span>
+</div>
+
+<!-- Login Form -->
+<div id="loginForm" class="form-container active">
+    <input type="text" id="loginUsername" placeholder="Username" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <button id="loginBtn">Login</button>
+</div>
+
+<!-- Register Form -->
+<div id="registerForm" class="form-container">
+    <input type="text" id="regUsername" placeholder="Username" required>
+    <input type="email" id="regEmail" placeholder="Email" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
+    <button id="registerBtn">Register</button>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

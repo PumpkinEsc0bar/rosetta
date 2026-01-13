@@ -1,0 +1,49 @@
+<header xmlns:th="http://www.w3.org/1999/xhtml">
+    <div id="guestMenu" style="display: none;">
+        <a href="#" onclick="showTab('login')">Login</a> |
+        <a href="#" onclick="showTab('signup')">Sign Up</a>
+    </div>
+
+    <div id="userMenu" style="display: none;">
+        <span id="usernameDisplay"></span> |
+        <a th:href="@{/}">Home</a> |
+        <a th:href="@{/notes}">My Notes</a> |
+        <a href="#" id="logoutBtn">Logout</a>
+    </div>
+</header>
+
+<script>
+    const token = localStorage.getItem('jwt');
+    const username = localStorage.getItem('username'); // будем сохранять имя при логине
+
+    if (token) {
+        document.getElementById('userMenu').style.display = 'inline';
+        document.getElementById('usernameDisplay').textContent = username || 'User';
+    } else {
+        document.getElementById('guestMenu').style.display = 'inline';
+    }
+
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('jwt');
+            localStorage.removeItem('username');
+            window.location.href = '/';
+        });
+    }
+
+    function showTab(tab) {
+        const loginForm = document.getElementById('loginTab');
+        const signupForm = document.getElementById('signupTab');
+        if (!loginForm || !signupForm) return;
+
+        if (tab === 'login') {
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+        } else {
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+        }
+    }
+</script>

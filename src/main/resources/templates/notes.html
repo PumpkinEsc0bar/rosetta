@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lab10 Notes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/notes.js}" defer></script>
+</head>
+<body>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<h1 style="text-align:center;">My Notes</h1>
+
+<!-- Notes list -->
+<div id="notesList" style="max-width:600px; margin:auto;"></div>
+
+<!-- Create note -->
+<div style="max-width:400px; margin:auto; margin-top:20px;">
+    <input type="text" id="noteTitle" placeholder="Title">
+    <textarea id="noteContent" placeholder="Content"></textarea>
+    <button id="createNote">Add Note</button>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

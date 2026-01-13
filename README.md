@@ -16,12 +16,15 @@ cp .env.example .env
 ```
 
 ## API Docs
-Open http://localhost:8080/docs
+- Swagger UI: http://localhost:8080/docs
+## UI
+- Open UI: http://localhost:8080/
+- Open UI: http://localhost:8080/index.html
 
 ## Endpoints
 - POST /auth/register
 - POST /auth/login
-- GET /notes
-- POST /notes
+- GET /api/notes
+- POST /api/notes
 
 JWT token is returned on login and must be sent as `Authorization: Bearer <token>`.

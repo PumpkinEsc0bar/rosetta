@@ -1,0 +1,60 @@
+body {
+    background: #121212;
+    color: #eee;
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.tab {
+    cursor: pointer;
+    padding: 10px 20px;
+    display: inline-block;
+    border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+    border-bottom: 2px solid #42a5f5;
+}
+
+.form-container {
+    display: none;
+    margin-top: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.form-container.active {
+    display: block;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    background: #222;
+    border: 1px solid #555;
+    color: #eee;
+}
+
+button {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    background: #42a5f5;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+}
+
+#logout {
+    display: none;
+    background: #f44336;
+}
+
+div#notesList div {
+    border: 1px solid #555;
+    padding: 8px;
+    margin: 4px 0;
+}
