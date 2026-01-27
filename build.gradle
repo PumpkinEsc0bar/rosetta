@@ -5,6 +5,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.9.22'
     id 'org.jetbrains.kotlin.plugin.spring' version '1.9.22'
     id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.22'
+    id 'jacoco'
 }
 
 group = 'com.example'
@@ -41,3 +42,20 @@ dependencies {
 }
 
 tasks.named('test') { useJUnitPlatform() }
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.named('test') {
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
