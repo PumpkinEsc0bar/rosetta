@@ -14,6 +14,7 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.slf4j.LoggerFactory
 import jakarta.servlet.http.HttpServletResponse
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 
 @Configuration
 @EnableMethodSecurity
@@ -45,7 +46,9 @@ class SecurityConfig(
     fun securityFilterChain(http: HttpSecurity, jwtAuthFilter: JwtAuthFilter): SecurityFilterChain {
 
         http
-            .csrf { it.disable() }
+            .csrf { csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            }
             .formLogin { it.disable() }
             .httpBasic { it.disable() }
             .headers {

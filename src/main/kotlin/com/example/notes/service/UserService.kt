@@ -68,12 +68,12 @@ open class UserService(
 
     fun authenticate(username: String, raw: String): User = repo.findByUsername(username)?.takeIf {
         passwordEncoder.matches(raw, it.password)
-    }?.also {
+    }?.let {
         User(
             id = it.id,
             username = it.username,
             email = it.email,
-            role = it.role,
+            role = it.role
         )
     } ?: throw RuntimeException("Bad credentials")
 

@@ -1,4 +1,20 @@
 const API_BASE = '/auth';
+const CSRF_COOKIE = 'XSRF-TOKEN';
+const CSRF_HEADER = 'X-XSRF-TOKEN';
+
+function getCsrfToken() {
+    const raw = document.cookie
+        .split(';')
+        .map(cookie => cookie.trim())
+        .find(cookie => cookie.startsWith(`${CSRF_COOKIE}=`));
+    if (!raw) return null;
+    return decodeURIComponent(raw.substring(CSRF_COOKIE.length + 1));
+}
+
+function addCsrfHeader(headers) {
+    const token = getCsrfToken();
+    if (token) headers[CSRF_HEADER] = token;
+}
 
 // Tabs
 const loginTab = document.getElementById('tab-login');
@@ -26,9 +42,11 @@ registerTab.addEventListener('click', () => switchTab('register'));
 
 // Register
 document.getElementById('registerBtn').addEventListener('click', async () => {
+    const headers = { 'Content-Type': 'application/json' };
+    addCsrfHeader(headers);
     const res = await fetch(`${API_BASE}/register`, {
         method: 'POST',
-        headers:{'Content-Type':'application/json'},
+        headers,
         body: JSON.stringify({
             username: document.getElementById('regUsername').value,
             email: document.getElementById('regEmail').value,
@@ -43,9 +61,11 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
 // Login
 document.getElementById('loginBtn').addEventListener('click', async () => {
+    const headers = { 'Content-Type': 'application/json' };
+    addCsrfHeader(headers);
     const res = await fetch(`${API_BASE}/login`, {
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers,
         body: JSON.stringify({
             username: document.getElementById('loginUsername').value,
             password: document.getElementById('loginPassword').value

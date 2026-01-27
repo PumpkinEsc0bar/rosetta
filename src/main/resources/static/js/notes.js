@@ -1,5 +1,21 @@
 const API_NOTES = '/api/notes';
 const token = localStorage.getItem('jwt');
+const CSRF_COOKIE = 'XSRF-TOKEN';
+const CSRF_HEADER = 'X-XSRF-TOKEN';
+
+function getCsrfToken() {
+    const raw = document.cookie
+        .split(';')
+        .map(cookie => cookie.trim())
+        .find(cookie => cookie.startsWith(`${CSRF_COOKIE}=`));
+    if (!raw) return null;
+    return decodeURIComponent(raw.substring(CSRF_COOKIE.length + 1));
+}
+
+function addCsrfHeader(headers) {
+    const token = getCsrfToken();
+    if (token) headers[CSRF_HEADER] = token;
+}
 
 // Redirect if not logged in
 if(!token) window.location.href = '/';
@@ -24,12 +40,14 @@ async function loadNotes(){
 }
 
 document.getElementById('createNote').addEventListener('click', async () => {
+    const headers = {
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+token
+    };
+    addCsrfHeader(headers);
     const res = await fetch(API_NOTES, {
         method:'POST',
-        headers:{
-            'Content-Type':'application/json',
-            'Authorization':'Bearer '+token
-        },
+        headers,
         body: JSON.stringify({
             title: document.getElementById('noteTitle').value,
             content: document.getElementById('noteContent').value

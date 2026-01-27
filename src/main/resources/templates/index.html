@@ -128,6 +128,26 @@
     let accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
     let refreshToken = localStorage.getItem('refreshToken');
     let editingId = null;
+    const CSRF_COOKIE = 'XSRF-TOKEN';
+    const CSRF_HEADER = 'X-XSRF-TOKEN';
+
+    function getCsrfToken() {
+        const raw = document.cookie
+            .split(';')
+            .map(cookie => cookie.trim())
+            .find(cookie => cookie.startsWith(`${CSRF_COOKIE}=`));
+        if (!raw) {
+            return null;
+        }
+        return decodeURIComponent(raw.substring(CSRF_COOKIE.length + 1));
+    }
+
+    function addCsrfHeader(headers) {
+        const token = getCsrfToken();
+        if (token) {
+            headers.set(CSRF_HEADER, token);
+        }
+    }
 
     // Initialize UI
     function init() {
@@ -192,9 +212,11 @@
         const password = document.getElementById('loginPassword').value;
 
         try {
+            const headers = new Headers({ 'Content-Type': 'application/json' });
+            addCsrfHeader(headers);
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ username, password })
             });
 
@@ -223,9 +245,11 @@
         const password = document.getElementById('registerPassword').value;
 
         try {
+            const headers = new Headers({ 'Content-Type': 'application/json' });
+            addCsrfHeader(headers);
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ username, email, password })
             });
 
@@ -427,9 +451,11 @@
         }
 
         try {
+            const headers = new Headers({ 'Content-Type': 'application/json' });
+            addCsrfHeader(headers);
             const response = await fetch(`${API_URL}/auth/refresh`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ refreshToken })
             });
 
@@ -457,6 +483,9 @@
         if (accessToken) {
             headers.set('Authorization', `Bearer ${accessToken}`);
         }
+        if (options.method && options.method.toUpperCase() !== 'GET') {
+            addCsrfHeader(headers);
+        }
 
         const response = await fetch(url, { ...options, headers });
         if (response.status !== 401 || !refreshToken) {
@@ -470,6 +499,9 @@
 
         const retryHeaders = new Headers(options.headers || {});
         retryHeaders.set('Authorization', `Bearer ${accessToken}`);
+        if (options.method && options.method.toUpperCase() !== 'GET') {
+            addCsrfHeader(retryHeaders);
+        }
         return fetch(url, { ...options, headers: retryHeaders });
     }
 
