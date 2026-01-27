@@ -77,6 +77,10 @@
                     <input type="text" id="registerUsername" required>
                 </div>
                 <div class="form-group">
+                    <label>Email</label>
+                    <input type="text" id="registerEmail" required>
+                </div>
+                <div class="form-group">
                     <label>Password</label>
                     <input type="password" id="registerPassword" required>
                 </div>
@@ -210,13 +214,14 @@
     async function register(event) {
         event.preventDefault();
         const username = document.getElementById('registerUsername').value;
+        const email = document.getElementById('registerEmail').value;
         const password = document.getElementById('registerPassword').value;
 
         try {
             const response = await fetch(`${API_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, email, password })
             });
 
             const data = await response.json();
@@ -232,7 +237,7 @@
             }
         } catch (error) {
             document.getElementById('registerError').innerHTML =
-                `<div class="error">Network error. Please try again.</div>`;
+                `<div class="error">Failed. Please try again.</div>`;
         }
     }
 

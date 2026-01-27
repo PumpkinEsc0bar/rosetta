@@ -48,7 +48,7 @@ class SecurityConfig(
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests {
-                // 🔓 PUBLIC
+                // PUBLIC
                 it.requestMatchers(
                     "/", "/index.html",
                     "/css/**", "/js/**", "/favicon.ico",
@@ -63,7 +63,7 @@ class SecurityConfig(
                     "/auth/**"
                 ).permitAll()
 
-                // 🔒 API JWT
+                // API JWT
                 it.requestMatchers("/notes/**", "/api/notes/**").authenticated()//                it.anyRequest().permitAll()
                 it.anyRequest().authenticated()
             }
