@@ -12,12 +12,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.slf4j.LoggerFactory
+import jakarta.servlet.http.HttpServletResponse
 
 @Configuration
 @EnableMethodSecurity
 class SecurityConfig(
     private val jwtUtil: JwtUtil
 ) {
+    private val log = LoggerFactory.getLogger(SecurityConfig::class.java)
+
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
@@ -44,6 +48,45 @@ class SecurityConfig(
             .csrf { it.disable() }
             .formLogin { it.disable() }
             .httpBasic { it.disable() }
+            .headers {
+                it.contentTypeOptions { }
+                it.frameOptions { frame -> frame.deny() }
+                it.referrerPolicy { policy ->
+                    policy.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)
+                }
+                it.contentSecurityPolicy { csp ->
+                    csp.policyDirectives(
+                        "default-src 'self'; " +
+                            "script-src 'self' 'unsafe-inline'; " +
+                            "style-src 'self' 'unsafe-inline'; " +
+                            "img-src 'self' data:; " +
+                            "connect-src 'self'; " +
+                            "base-uri 'self'; " +
+                            "form-action 'self'; " +
+                            "frame-ancestors 'none'"
+                    )
+                }
+            }
+            .exceptionHandling {
+                it.authenticationEntryPoint { request, response, _ ->
+                    log.warn(
+                        "Unauthorized request method={} path={} remoteIp={}",
+                        request.method,
+                        request.requestURI,
+                        request.remoteAddr
+                    )
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
+                }
+                it.accessDeniedHandler { request, response, _ ->
+                    log.warn(
+                        "Forbidden request method={} path={} remoteIp={}",
+                        request.method,
+                        request.requestURI,
+                        request.remoteAddr
+                    )
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN)
+                }
+            }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }

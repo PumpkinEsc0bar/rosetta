@@ -22,14 +22,30 @@ class NoteController(
     @Operation(summary = "Get all notes")
     fun all() = notes.all(currentUserId())
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get note")
+    fun get(@PathVariable id: Int): Note = notes.get(id, currentUserId())
+
     @PostMapping
     @Operation(summary = "Create note")
     fun create(@Valid @RequestBody r: NoteRequest): Note? =
         notes.create(r.title, r.content, currentUserId())
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update note")
+    fun update(@PathVariable id: Int, @Valid @RequestBody r: NoteRequest): Note =
+        notes.update(id, r.title, r.content, currentUserId())
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete note")
+    fun delete(@PathVariable id: Int) {
+        notes.delete(id, currentUserId())
+    }
 
     private fun currentUserId(): Int {
         val username = SecurityContextHolder.getContext().authentication.name
         val user = users.findByUsername(username)
             ?: throw RuntimeException("User not found")
         return user.id
-    }}
+    }
+}

@@ -48,7 +48,7 @@ class JwtAuthFilter(
 
         val token = authHeader.substring(7)
 
-        if (!jwtUtil.isTokenValid(token)) {
+        if (!jwtUtil.isAccessTokenValid(token)) {
 //            response.status = HttpServletResponse.SC_UNAUTHORIZED
             filterChain.doFilter(request, response)
             return

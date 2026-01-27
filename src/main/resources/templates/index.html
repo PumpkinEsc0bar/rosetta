@@ -24,6 +24,11 @@
         .note { padding: 15px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 10px; }
         .note h3 { margin-bottom: 10px; color: #333; }
         .note p { color: #666; line-height: 1.6; }
+        .note-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #b02a37; }
+        .btn-link { background: transparent; color: #007bff; border: 1px solid #007bff; }
+        .btn-link:hover { background: #e7f1ff; }
         .error { color: #dc3545; padding: 10px; background: #f8d7da; border-radius: 4px; margin-bottom: 15px; }
         .success { color: #155724; padding: 10px; background: #d4edda; border-radius: 4px; margin-bottom: 15px; }
         .hidden { display: none; }
@@ -93,10 +98,10 @@
     <div id="notesSection" class="hidden">
         <!-- Create Note Form -->
         <div class="card">
-            <h2>Create New Note</h2>
+            <h2 id="noteFormTitle">Create New Note</h2>
             <div id="noteError"></div>
             <div id="noteSuccess"></div>
-            <form onsubmit="createNote(event)">
+            <form onsubmit="saveNote(event)">
                 <div class="form-group">
                     <label>Title</label>
                     <input type="text" id="noteTitle" required>
@@ -105,7 +110,8 @@
                     <label>Content</label>
                     <textarea id="noteContent" required></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Create Note</button>
+                <button type="submit" class="btn btn-primary" id="noteSubmitBtn">Create Note</button>
+                <button type="button" class="btn btn-secondary hidden" id="noteCancelBtn" onclick="cancelEdit()">Cancel</button>
             </form>
         </div>
 
@@ -119,35 +125,33 @@
 
 <script>
     const API_URL = '';
-    let token = localStorage.getItem('token');
+    let accessToken = localStorage.getItem('accessToken') || localStorage.getItem('token');
+    let refreshToken = localStorage.getItem('refreshToken');
+    let editingId = null;
 
     // Initialize UI
     function init() {
-        if (token) {
+        if (accessToken) {
             checkAuth();
         } else {
             showGuestMenu();
         }
     }
 
-    // Check if token is valid and load notes
+    // Check if access token is valid and load notes
     async function checkAuth() {
         try {
-            const response = await fetch(`${API_URL}/api/notes`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await authFetch(`${API_URL}/api/notes`);
 
             if (response.ok) {
                 showUserMenu();
                 loadNotes();
             } else {
-                localStorage.removeItem('token');
-                token = null;
+                clearTokens();
                 showGuestMenu();
             }
         } catch (error) {
-            localStorage.removeItem('token');
-            token = null;
+            clearTokens();
             showGuestMenu();
         }
     }
@@ -167,7 +171,7 @@
         document.getElementById('notesSection').classList.remove('hidden');
 
         // Display email in header
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
         document.getElementById('username').textContent = payload.sub;
     }
 
@@ -197,8 +201,9 @@
             const data = await response.json();
 
             if (response.ok) {
-                token = data.token;
-                localStorage.setItem('token', token);
+                const newAccessToken = data.accessToken || data.token;
+                const newRefreshToken = data.refreshToken;
+                setTokens(newAccessToken, newRefreshToken);
                 showUserMenu();
                 loadNotes();
             } else {
@@ -227,8 +232,9 @@
             const data = await response.json();
 
             if (response.ok) {
-                token = data.token;
-                localStorage.setItem('token', token);
+                const newAccessToken = data.accessToken || data.token;
+                const newRefreshToken = data.refreshToken;
+                setTokens(newAccessToken, newRefreshToken);
                 showUserMenu();
                 loadNotes();
             } else {
@@ -242,8 +248,7 @@
     }
 
     function logout() {
-        token = null;
-        localStorage.removeItem('token');
+        clearTokens();
         showGuestMenu();
         document.getElementById('loginForm').classList.add('hidden');
         document.getElementById('registerForm').classList.add('hidden');
@@ -252,9 +257,7 @@
     // Notes functions
     async function loadNotes() {
         try {
-            const response = await fetch(`${API_URL}/api/notes`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await authFetch(`${API_URL}/api/notes`);
 
             if (response.ok) {
                 const notes = await response.json();
@@ -281,38 +284,97 @@
                 <div class="note">
                     <h3>${escapeHtml(note.title)}</h3>
                     <p>${escapeHtml(note.content)}</p>
+                    <div class="note-actions">
+                        <button class="btn btn-link" onclick="startEdit(${note.id}, '${escapeAttribute(note.title)}', '${escapeAttribute(note.content)}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteNote(${note.id})">Delete</button>
+                    </div>
                 </div>
             `).join('');
     }
 
-    async function createNote(event) {
+    function startEdit(id, title, content) {
+        editingId = id;
+        document.getElementById('noteTitle').value = title;
+        document.getElementById('noteContent').value = content;
+        document.getElementById('noteFormTitle').textContent = 'Edit Note';
+        document.getElementById('noteSubmitBtn').textContent = 'Update Note';
+        document.getElementById('noteCancelBtn').classList.remove('hidden');
+        clearNoteAlerts();
+    }
+
+    function cancelEdit() {
+        editingId = null;
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteContent').value = '';
+        document.getElementById('noteFormTitle').textContent = 'Create New Note';
+        document.getElementById('noteSubmitBtn').textContent = 'Create Note';
+        document.getElementById('noteCancelBtn').classList.add('hidden');
+        clearNoteAlerts();
+    }
+
+    function clearNoteAlerts() {
+        document.getElementById('noteError').innerHTML = '';
+        document.getElementById('noteSuccess').innerHTML = '';
+    }
+
+    async function saveNote(event) {
         event.preventDefault();
         const title = document.getElementById('noteTitle').value;
         const content = document.getElementById('noteContent').value;
 
         try {
-            const response = await fetch(`${API_URL}/api/notes`, {
-                method: 'POST',
+            const url = editingId ? `${API_URL}/api/notes/${editingId}` : `${API_URL}/api/notes`;
+            const method = editingId ? 'PUT' : 'POST';
+            const response = await authFetch(url, {
+                method,
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ title, content })
             });
 
             if (response.ok) {
-                document.getElementById('noteTitle').value = '';
-                document.getElementById('noteContent').value = '';
+                const wasEditing = editingId !== null;
+                cancelEdit();
                 document.getElementById('noteSuccess').innerHTML =
-                    '<div class="success">Note created successfully!</div>';
+                    `<div class="success">Note ${wasEditing ? 'updated' : 'created'} successfully!</div>`;
                 setTimeout(() => {
                     document.getElementById('noteSuccess').innerHTML = '';
                 }, 3000);
                 loadNotes();
             } else {
-                const data = await response.json();
+                const message = await extractErrorMessage(response, 'Failed to save note');
                 document.getElementById('noteError').innerHTML =
-                    `<div class="error">${data.message || 'Failed to create note'}</div>`;
+                    `<div class="error">${message}</div>`;
+            }
+        } catch (error) {
+            document.getElementById('noteError').innerHTML =
+                '<div class="error">Network error. Please try again.</div>';
+        }
+    }
+
+    async function deleteNote(id) {
+        if (!confirm('Delete this note?')) {
+            return;
+        }
+
+        try {
+            const response = await authFetch(`${API_URL}/api/notes/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                cancelEdit();
+                document.getElementById('noteSuccess').innerHTML =
+                    '<div class="success">Note deleted.</div>';
+                setTimeout(() => {
+                    document.getElementById('noteSuccess').innerHTML = '';
+                }, 3000);
+                loadNotes();
+            } else {
+                const message = await extractErrorMessage(response, 'Failed to delete note');
+                document.getElementById('noteError').innerHTML =
+                    `<div class="error">${message}</div>`;
             }
         } catch (error) {
             document.getElementById('noteError').innerHTML =
@@ -325,6 +387,109 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function escapeAttribute(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function setTokens(newAccessToken, newRefreshToken) {
+        accessToken = newAccessToken || null;
+        refreshToken = newRefreshToken || null;
+
+        if (accessToken) {
+            localStorage.setItem('accessToken', accessToken);
+        } else {
+            localStorage.removeItem('accessToken');
+        }
+
+        if (refreshToken) {
+            localStorage.setItem('refreshToken', refreshToken);
+        } else {
+            localStorage.removeItem('refreshToken');
+        }
+
+        localStorage.removeItem('token');
+    }
+
+    function clearTokens() {
+        setTokens(null, null);
+    }
+
+    async function refreshAccessToken() {
+        if (!refreshToken) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+            });
+
+            if (!response.ok) {
+                clearTokens();
+                return false;
+            }
+
+            const data = await response.json();
+            if (!data.accessToken || !data.refreshToken) {
+                clearTokens();
+                return false;
+            }
+
+            setTokens(data.accessToken, data.refreshToken);
+            return true;
+        } catch (error) {
+            clearTokens();
+            return false;
+        }
+    }
+
+    async function authFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        if (accessToken) {
+            headers.set('Authorization', `Bearer ${accessToken}`);
+        }
+
+        const response = await fetch(url, { ...options, headers });
+        if (response.status !== 401 || !refreshToken) {
+            return response;
+        }
+
+        const refreshed = await refreshAccessToken();
+        if (!refreshed) {
+            return response;
+        }
+
+        const retryHeaders = new Headers(options.headers || {});
+        retryHeaders.set('Authorization', `Bearer ${accessToken}`);
+        return fetch(url, { ...options, headers: retryHeaders });
+    }
+
+    async function extractErrorMessage(response, fallbackMessage) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            try {
+                const data = await response.json();
+                return data.message || fallbackMessage;
+            } catch (error) {
+                return fallbackMessage;
+            }
+        }
+
+        try {
+            const text = await response.text();
+            return text || fallbackMessage;
+        } catch (error) {
+            return fallbackMessage;
+        }
     }
 
     // Initialize on load

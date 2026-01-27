@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface NoteRepository : JpaRepository<Note, Int> {
     fun findAllByUserId(userId: Int): List<Note>
+    fun findByIdAndUserId(id: Int, userId: Int): Note?
 }
