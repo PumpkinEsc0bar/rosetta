@@ -25,8 +25,19 @@ jobs:
           DB_URL: jdbc:sqlite:notes.db
           JWT_SECRET: ci_secret_ci_secret_ci_secret_ci_secret_1234567890
 
+      - name: OWASP Dependency-Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: ./gradlew dependencyCheckAnalyze || echo "::warning::OWASP Dependency-Check failed; continuing"
+
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
           path: build/reports/jacoco/test/html
+
+      - name: Upload OWASP report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: build/reports/dependency-check-report.html

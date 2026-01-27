@@ -6,6 +6,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.spring' version '1.9.22'
     id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.22'
     id 'jacoco'
+    id 'org.owasp.dependencycheck' version '9.0.9'
 }
 
 group = 'com.example'
@@ -57,5 +58,19 @@ tasks.jacocoTestReport {
         xml.required = true
         html.required = true
         csv.required = false
+    }
+}
+
+def nvdApiKey = System.getenv("NVD_API_KEY")
+
+dependencyCheck {
+    formats = ["HTML", "XML"]
+    failBuildOnCVSS = 7.0
+    if (nvdApiKey) {
+        nvd {
+            apiKey = nvdApiKey
+        }
+    } else {
+        autoUpdate = false
     }
 }
