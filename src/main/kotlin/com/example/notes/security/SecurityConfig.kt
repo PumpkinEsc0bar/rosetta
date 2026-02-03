@@ -46,8 +46,16 @@ class SecurityConfig(
     fun securityFilterChain(http: HttpSecurity, jwtAuthFilter: JwtAuthFilter): SecurityFilterChain {
 
         http
+//            .csrf { csrf ->
+//                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+//            }
             .csrf { csrf ->
                 csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                csrf.ignoringRequestMatchers(
+                    "/auth/**",
+                    "/api/**",
+                    "/notes/**"
+                )
             }
             .formLogin { it.disable() }
             .httpBasic { it.disable() }
