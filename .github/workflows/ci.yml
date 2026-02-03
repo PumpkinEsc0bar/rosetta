@@ -25,10 +25,18 @@ jobs:
           DB_URL: jdbc:sqlite:notes.db
           JWT_SECRET: ci_secret_ci_secret_ci_secret_ci_secret_1234567890
 
+      - name: Cache OWASP Data
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/dependency-check-data
+          key: ${{ runner.os }}-owasp-${{ hashFiles('**/build.gradle*', '**/build.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-owasp-
+
       - name: OWASP Dependency-Check
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: ./gradlew dependencyCheckAnalyze || echo "::warning::OWASP Dependency-Check failed; continuing"
+        run: ./gradlew dependencyCheckAnalyze --info || echo "::warning::OWASP Dependency-Check failed; continuing"
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4

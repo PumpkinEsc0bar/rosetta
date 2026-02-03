@@ -1,12 +1,12 @@
 
 plugins {
-    id 'org.springframework.boot' version '3.4.5'
+    id 'org.springframework.boot' version '4.0.2'
     id 'io.spring.dependency-management' version '1.1.4'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
-    id 'org.jetbrains.kotlin.plugin.spring' version '1.9.22'
-    id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.22'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.0'
+    id 'org.jetbrains.kotlin.plugin.spring' version '2.3.0'
+    id 'org.jetbrains.kotlin.plugin.jpa' version '2.3.0'
     id 'jacoco'
-    id 'org.owasp.dependencycheck' version '9.0.9'
+    id 'org.owasp.dependencycheck' version '12.2.0'
 }
 
 group = 'com.example'
@@ -37,6 +37,7 @@ dependencies {
 
     runtimeOnly 'org.flywaydb:flyway-core'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
     testImplementation 'org.mockito.kotlin:mockito-kotlin:5.2.1'
     testImplementation 'org.springframework.security:spring-security-test'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
@@ -64,6 +65,9 @@ tasks.jacocoTestReport {
 def nvdApiKey = System.getenv("NVD_API_KEY")
 
 dependencyCheck {
+    data {
+        directory = layout.buildDirectory.dir("dependency-check-data").get().asFile.absolutePath
+    }
     formats = ["HTML", "XML"]
     failBuildOnCVSS = 7.0
     if (nvdApiKey) {

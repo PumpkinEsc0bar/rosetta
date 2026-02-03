@@ -4,11 +4,13 @@ import com.example.notes.model.dto.UserSummary
 import com.example.notes.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,21 +21,27 @@ class UserController(
     @GetMapping
     @Operation(summary = "List users (admin only)")
     fun listUsers(): List<UserSummary> {
-        val username = SecurityContextHolder.getContext().authentication.name
+        val authentication = SecurityContextHolder.getContext().authentication
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated request")
+        val username = authentication.name
         return users.listUsers(username)
     }
 
     @PostMapping("/me/admin")
     @Operation(summary = "Promote current user to admin")
     fun becomeAdmin(): UserSummary {
-        val username = SecurityContextHolder.getContext().authentication.name
+        val authentication = SecurityContextHolder.getContext().authentication
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated request")
+        val username = authentication.name
         return users.promoteToAdmin(username)
     }
 
     @PostMapping("/me/user")
     @Operation(summary = "Demote current user to user")
     fun becomeUser(): UserSummary {
-        val username = SecurityContextHolder.getContext().authentication.name
+        val authentication = SecurityContextHolder.getContext().authentication
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated request")
+        val username = authentication.name
         return users.demoteToUser(username)
     }
 }

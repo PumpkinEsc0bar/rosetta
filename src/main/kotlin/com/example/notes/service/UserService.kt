@@ -19,7 +19,8 @@ open class UserService(
             User(
                 username = username,
                 email = email,
-                password = passwordEncoder.encode(password),
+                password = passwordEncoder.encode(password)
+                    ?: throw IllegalStateException("Password encoding failed"),
                 role = Role.USER
             )
         )

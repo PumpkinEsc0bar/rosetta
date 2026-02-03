@@ -11,21 +11,23 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.context.WebApplicationContext
 import java.util.Date
 
 @SpringBootTest
-@AutoConfigureMockMvc
 @TestPropertySource(
     properties = [
         "DB_URL=jdbc:sqlite:/tmp/notes-it.db",
@@ -34,8 +36,10 @@ import java.util.Date
     ]
 )
 class SecurityIntegrationTest {
-    @Autowired
     private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var context: WebApplicationContext
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -54,6 +58,9 @@ class SecurityIntegrationTest {
 
     @BeforeEach
     fun setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+            .apply<DefaultMockMvcBuilder>(springSecurity())
+            .build()
         noteRepository.deleteAll()
         userRepository.deleteAll()
     }
@@ -122,7 +129,8 @@ class SecurityIntegrationTest {
             User(
                 username = username,
                 email = "$username@example.com",
-                password = passwordEncoder.encode(rawPassword),
+                password = passwordEncoder.encode(rawPassword)
+                    ?: throw IllegalStateException("Password encoding failed"),
                 role = Role.USER
             )
         )
