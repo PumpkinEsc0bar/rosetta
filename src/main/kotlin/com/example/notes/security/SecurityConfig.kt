@@ -114,7 +114,8 @@ class SecurityConfig(
                     "/v3/api-docs/**",
 
                     // auth
-                    "/auth/**"
+                    "/auth/**",
+                    "/error"
                 ).permitAll()
 
                 // API JWT
